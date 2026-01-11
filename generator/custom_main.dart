@@ -9,6 +9,7 @@ If you are not coding a Windows application, delete this line and remove it from
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 // We've added a small env file for you.
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../widget/top_bar.dart';
 
 /*Hello Portakal Developer! 🍊 It's excellent that you chose to use Portakal!
 You are inside a project manipulated with Portakal Manipulation.
@@ -69,56 +70,64 @@ class _PortakalBMIState extends State<PortakalBMI> {
     return PManagerScaffold(
       listenables: [buttonData],
       body: () {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              h1(context, "🍊Welcome Portakal BMI!🧡"),
-              SizedBox(
-                width: PortakalWindow.width(context) * 0.3,
-                child: Divider(
-                  color: PortakalTheme.defaultColor(),
-                  thickness: 1,
+        return Column(
+          children: [
+            PortakalTopWindow(),
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    h1(context, "🍊Welcome Portakal BMI!🧡"),
+                    SizedBox(
+                      width: PortakalWindow.width(context) * 0.3,
+                      child: Divider(
+                        color: PortakalTheme.defaultColor(),
+                        thickness: 1,
+                      ),
+                    ),
+                    SizedBox(
+                      width: PortakalWindow.width(context) * 0.5,
+                      child: PortakalTextField(
+                        textController: heightController,
+                        text: "Centimeters",
+                        bgColor: PortakalTheme.cardColor(),
+                        icon: Icons.accessibility_outlined,
+                      ),
+                    ),
+                    SizedBox(
+                      width: PortakalWindow.width(context) * 0.5,
+                      child: PortakalTextField(
+                        textController: weightController,
+                        text: "Kilograms",
+                        bgColor: PortakalTheme.cardColor(),
+                        icon: Icons.balance_outlined,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    SizedBox(
+                      width: PortakalWindow.width(context) * 0.5 - 20,
+                      child: PortakalButton(
+                        type: PortakalButtonType.duotone,
+                        text: "🧮 ${buttonData()} 🧮",
+                        onTap: () async {
+                          double height =
+                              double.parse(heightController.text) / 100;
+                          double weight = double.parse(weightController.text);
+                          double bmi = weight / (height * height);
+                          buttonData.set(bmi.toStringAsFixed(2));
+                          await Future.delayed(Duration(seconds: 5));
+                          buttonData.set("Calculate");
+                          heightController.clear();
+                          weightController.clear();
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(
-                width: PortakalWindow.width(context) * 0.5,
-                child: PortakalTextField(
-                  textController: heightController,
-                  text: "Centimeters",
-                  bgColor: PortakalTheme.cardColor(),
-                  icon: Icons.accessibility_outlined,
-                ),
-              ),
-              SizedBox(
-                width: PortakalWindow.width(context) * 0.5,
-                child: PortakalTextField(
-                  textController: weightController,
-                  text: "Kilograms",
-                  bgColor: PortakalTheme.cardColor(),
-                  icon: Icons.balance_outlined,
-                ),
-              ),
-              SizedBox(height: 8),
-              SizedBox(
-                width: PortakalWindow.width(context) * 0.5 - 20,
-                child: PortakalButton(
-                  type: PortakalButtonType.duotone,
-                  text: "🧮 ${buttonData()} 🧮",
-                  onTap: () async {
-                    double height = double.parse(heightController.text) / 100;
-                    double weight = double.parse(weightController.text);
-                    double bmi = weight / (height * height);
-                    buttonData.set(bmi.toStringAsFixed(2));
-                    await Future.delayed(Duration(seconds: 5));
-                    buttonData.set("Calculate");
-                    heightController.clear();
-                    weightController.clear();
-                  },
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         );
       },
     );

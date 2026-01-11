@@ -103,9 +103,6 @@ Future<void> _applyCustomMain(String projectPath) async {
     print(
       '🧡 [ WARN ] "custom_main.dart" template not found at: ${templateFile.path}',
     );
-    print(
-      '    Make sure "custom_main.dart" is in the same folder as portakal.exe',
-    );
     return;
   }
 
@@ -131,14 +128,11 @@ Future<void> _copyCustomLibFolder(String projectPath) async {
   );
 
   if (!await customLibDir.exists()) {
-    print('🧡 [ INFO ] "custom_lib" folder not found at: ${customLibDir.path}');
-    print(
-      '    Make sure "custom_lib" folder is inside the same folder as portakal.exe',
-    );
+    print('🧡 [ INFO ] "custom_lib" folder not found.');
     return;
   }
 
-  print('🍊 [ 3/6 ] Injecting custom library files from app directory...');
+  print('🍊 [ 3/6 ] Injecting custom library files...');
   await _copyDirectory(customLibDir, targetLibDir);
 }
 
@@ -157,30 +151,20 @@ Future<void> _copyDirectory(Directory source, Directory destination) async {
       await entity.copy(newPath);
     }
   }
-  print('    -> Merged: ${source.path.split(Platform.pathSeparator).last}');
 }
 
 Future<void> _configureWindows(String path) async {
   print('🍊 [ 4/6 ] Configuring Windows...');
-  File cmakeFile = File(
+  File mainCpp = File(
     path +
         Platform.pathSeparator +
         'windows' +
         Platform.pathSeparator +
         'runner' +
         Platform.pathSeparator +
-        'CMakeLists.txt',
+        'main.cpp',
   );
-  if (await cmakeFile.exists()) {
-    File mainCpp = File(
-      path +
-          Platform.pathSeparator +
-          'windows' +
-          Platform.pathSeparator +
-          'runner' +
-          Platform.pathSeparator +
-          'main.cpp',
-    );
+  if (await mainCpp.exists()) {
     String cppContent = '''
 #include <flutter/dart_project.h>
 #include <flutter/flutter_view_controller.h>
@@ -188,6 +172,8 @@ Future<void> _configureWindows(String path) async {
 #include "flutter_window.h"
 #include "utils.h"
 #include <bitsdojo_window_windows/bitsdojo_window_plugin.h>
+
+auto bdw = bitsdojo_window_configure(BDW_CUSTOM_FRAME | BDW_HIDE_ON_STARTUP);
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
                       _In_ wchar_t *command_line, _In_ int show_command) {
@@ -213,9 +199,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   }
 
   window.SetQuitOnClose(true);
-
-  auto bdw = bitsdojo_window_configure(auto_injector);
-  bdw->setWindow(window.GetHandle());
 
   ::MSG msg;
   while (::GetMessage(&msg, nullptr, 0, 0)) {
@@ -318,17 +301,6 @@ flutter {
 }
 ''';
     await gradleFile.writeAsString(fullGradle);
-
-    File keyProps = File(
-      path +
-          Platform.pathSeparator +
-          'android' +
-          Platform.pathSeparator +
-          'key.properties',
-    );
-    await keyProps.writeAsString(
-      'storePassword=123456\nkeyPassword=123456\nkeyAlias=key0\nstoreFile=key.jks\n',
-    );
   }
 }
 
@@ -337,17 +309,8 @@ Future<void> _createExtraFiles(String path) async {
   await File(
     path + Platform.pathSeparator + 'rules.md',
   ).writeAsString('# Project Rules\n\n1. No comments.\n2. Clean Code.');
-  await File(
-    path + Platform.pathSeparator + 'tasks.md',
-  ).writeAsString('# Tasks\n\n- [ ] Init Project\n- [ ] Design UI');
-
   String year = DateTime.now().year.toString();
-  String mit =
-      '''
-MIT License
-Copyright (c) $year 
-Permission is hereby granted, free of charge...
-''';
+  String mit = 'MIT License\nCopyright (c) $year\n...';
   await File(path + Platform.pathSeparator + 'LICENSE').writeAsString(mit);
 }
 
@@ -355,8 +318,22 @@ Future<void> _configureEnv(String path) async {
   await File(
     path + Platform.pathSeparator + '.env',
   ).writeAsString('APP_NAME=PortakalApp\nAPI_KEY=1234567890\nDEBUG=true\n');
+
   File gitignore = File(path + Platform.pathSeparator + '.gitignore');
   if (await gitignore.exists()) {
     await gitignore.writeAsString('\n.env\n', mode: FileMode.append);
+  }
+
+  File pubspec = File(path + Platform.pathSeparator + 'pubspec.yaml');
+  if (await pubspec.exists()) {
+    String content = await pubspec.readAsString();
+    if (content.contains('uses-material-design: true')) {
+      content = content.replaceFirst(
+        'uses-material-design: true',
+        'uses-material-design: true\n  assets:\n    - .env\n',
+      );
+      await pubspec.writeAsString(content);
+      print('    -> Registered .env in pubspec.yaml assets.');
+    }
   }
 }
